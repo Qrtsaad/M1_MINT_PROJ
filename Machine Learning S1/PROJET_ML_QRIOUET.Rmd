@@ -1,0 +1,475 @@
+---
+title: "PROJET MACHINE LEARNING"
+author: "Saâd Qriouet n° étudiant : 20171683 M1 MINT"
+date: "11/14/2020"
+output:
+  pdf_document:
+    latex_engine: xelatex
+---
+
+# 1. Vos données
+
+**Chargement des librairies et du jeu de données**
+```{r}
+library(MASS)
+library(FactoMineR)
+library(ggplot2)
+library(ggpubr)
+library(qcc)
+library(factoextra)
+library(rpart)
+library(rpart.plot)
+library(lattice)
+library(caret)
+library(e1071)
+
+data(crabs)
+```
+\newpage
+
+
+# 2. Exploration non supervisée avec l'analyse en composantes principales
+
+
+## A. Presentation du jeu de données :
+```{r}
+dim(crabs)
+names(crabs)
+summary(crabs)
+
+```
+Le jeu de données contient 5 mesures morphologiques sur 200 crabes de deux couleurs et sexes différents, de l'espèce Leptograpsus variegatus collectées à Fremantle en Australie occidentale.
+
+
+Nombre de variables : 8 
+
+
+La variable index est la variable identifiante, on ne va pas y preter attention.
+Hormis la variable index, il y a deux typologies concernant les variables : quantitatives et qualitatives.
+
+
+Les variables quantitatives sont : FL, RW, CL, CW et BD donc 5.
+
+
+Les variables qualitatives sont : sp et sex donc 2.
+\newpage
+
+
+## B. Brève description du jeu de données :
+
+
+### a) Variable sp :
+```{r, fig.width = 4, fig.height = 4}
+effectifs <- table(crabs$sp) 
+frequences <- effectifs/sum(effectifs)
+tableau <- cbind(effectifs,frequences)
+tableau
+pie(table(crabs$sp),labels=c("Orange","Bleu"), col=c("orange","blue"), main="Répartition des espèces", cex=1)
+
+```
+
+
+Il y a autant de crabes bleus que de crabes oranges.
+
+\newpage
+
+### b) Variable sex :
+```{r, fig.width = 4, fig.height = 4}
+effectifs <- table(crabs$sex) 
+frequences <- effectifs/sum(effectifs)
+tableau <- cbind(effectifs,frequences)
+tableau
+pie(table(crabs$sex), labels=c("Femelle","Mâle"), col=c("pink","blue"), main="Répartition des sexes", cex=1)
+```
+
+
+Il y a autant de crabes mâles que de crabes femelles.
+\newpage
+
+
+### c) Variable FL :
+```{r, fig.width = 4, fig.height = 4}
+# Calcul de moyenne et variance :
+mean(crabs$FL)
+var(crabs$FL)
+# Construction du tableau d'effectifs,fréquences et de fréquences cumulées
+reshist <- hist(crabs$FL,plot=FALSE,right=FALSE)
+effectifs <- reshist$counts
+frequences <- effectifs/sum(effectifs)
+frequencescum <- cumsum(frequences)
+tableau <- cbind(effectifs,frequences,frequencescum)
+tableau
+# Histogramme 
+hist(crabs$FL, main = "Répartition de la taille du lobe frontal", xlab = " Taille du lobe frontal", ylab = "Effectif")
+# Box-plot
+ggboxplot(crabs$FL, main = "Boxplot de la taille du lobe frontal ", ylab = "Taille du lobe frontal", add = "jitter")
+```
+
+
+La moyenne de la taille du lobe frontal est de 15.583, avec des valeurs allant de 1 à 50 (variance très élevée).
+
+
+On observe quelques points abérrants sur le boxplot.
+\newpage
+
+
+### d) Variable RW :
+```{r, fig.width = 4, fig.height = 4}
+# Calcul de moyenne et variance :
+mean(crabs$RW)
+var(crabs$RW)
+# Construction du tableau d'effectifs,fréquences et de fréquences cumulées
+reshist <- hist(crabs$RW,plot=FALSE,right=FALSE)
+effectifs <- reshist$counts
+frequences <- effectifs/sum(effectifs)
+frequencescum <- cumsum(frequences)
+tableau <- cbind(effectifs,frequences,frequencescum)
+tableau
+# Histogramme 
+hist(crabs$RW, main = "Répartition de la largeur de l'arrière", xlab = " Largeur de l'arrière", ylab = "Effectif")
+# Box-plot
+ggboxplot(crabs$RW, main = "Boxplot de la largeur de l'arrière ", ylab = "Largeur de l'arrière ", add = "jitter")
+```
+
+
+La moyenne de la largeur de l'arrière est de 12.7385, avec des valeurs allant de 7.2 à 23.1 (variance élevée).
+
+
+On observe quelques points abérrants sur le boxplot.
+\newpage
+
+
+### e) Variable CL :
+```{r, fig.width = 4, fig.height = 4}
+# Calcul de moyenne et variance :
+mean(crabs$CL)
+var(crabs$CL)
+# Construction du tableau d'effectifs,fréquences et de fréquences cumulées
+reshist <- hist(crabs$CL,plot=FALSE,right=FALSE)
+effectifs <- reshist$counts
+frequences <- effectifs/sum(effectifs)
+frequencescum <- cumsum(frequences)
+tableau <- cbind(effectifs,frequences,frequencescum)
+tableau
+# Histogramme 
+hist(crabs$CL, main = "Répartition de la longueur de la carapace", xlab = " Longueur de la carapace", ylab = "Effectif")
+# Box-plot
+ggboxplot(crabs$CL, main = "Boxplot de la longueur de la carapace ", ylab = "Longueur de la carapace", add = "jitter")
+```
+
+
+La moyenne de la longueur de la carapace est de 32.1055, avec des valeurs allant de 14.7 à 47.6 (variance très élevée).
+
+
+On observe quelques points abérrants sur le boxplot.
+\newpage
+
+
+### f) Variable CW :
+```{r, fig.width = 4, fig.height = 4}
+# Calcul de moyenne et variance :
+mean(crabs$CW)
+var(crabs$CW)
+# Construction du tableau d'effectifs,fréquences et de fréquences cumulées
+reshist <- hist(crabs$CW,plot=FALSE,right=FALSE)
+effectifs <- reshist$counts
+frequences <- effectifs/sum(effectifs)
+frequencescum <- cumsum(frequences)
+tableau <- cbind(effectifs,frequences,frequencescum)
+tableau
+# Histogramme 
+hist(crabs$CW, main = "Répartition de la largeur de la carapace", xlab = " Largeur de la carapace", ylab = "Effectif")
+# Box-plot
+ggboxplot(crabs$CW, main = "Boxplot de la largeur de la carapace", ylab = "Largeur de la carapace", add = "jitter")
+```
+
+
+La moyenne de la largeur de la carapace est de 36.4145, avec des valeurs allant de 17.1 à 54.6 (variance très élevée).
+
+
+On observe quelques points abérrants sur le boxplot.
+\newpage
+
+
+### g) Variable BD : 
+```{r, fig.width = 4, fig.height = 4}
+# Calcul de moyenne et variance :
+mean(crabs$BD)
+var(crabs$BD)
+# Construction du tableau d'effectifs,fréquences et de fréquences cumulées
+reshist <- hist(crabs$BD,plot=FALSE,right=FALSE)
+effectifs <- reshist$counts
+frequences <- effectifs/sum(effectifs)
+frequencescum <- cumsum(frequences)
+tableau <- cbind(effectifs,frequences,frequencescum)
+tableau
+# Histogramme 
+hist(crabs$BD, main = "Répartition de la profondeur du corps ", xlab = "Profondeur du corps", ylab = "Effectif")
+# Box-plot
+ggboxplot(crabs$BD, main = "Boxplot de la profondeur du corps", ylab = "Profondeur du corps", add = "jitter")
+```
+
+
+La moyenne de la largeur de la carapace est de 14.0305, avec des valeurs allant de 6.1 à 21.6 (variance élevée).
+
+
+On observe quelques points abérrants sur le boxplot.
+\newpage
+
+
+## C. Utilisation de l'ACP :
+
+
+Afin de continuer notre analyse exploratoire, nous allons réaliser une ACP :
+
+
+### a) Scatterplot avant l'ACP : 
+
+
+Avant d'appliquer la méthode de l'ACP, nous allons créer un jeu de données contenant uniquement les variables quantitatives et y réaliser un scatterplot pour observer les liens entre les variables : 
+```{r, fig.width = 5, fig.height = 5}
+crabsquant <- crabs[,4:8]
+pairs(crabsquant)
+```
+
+
+\newpage
+
+
+### b) Première ACP :
+
+**Nous allons réaliser une ACP (basique) avec ce nouveau jeu de données :**
+```{r, fig.width = 3, fig.height = 3}
+res_pca <- PCA(crabsquant)
+summary(res_pca)
+```
+Tout d'abord, nous voyons que le graphique des individus est illisible en partie a cause des libéllés des individus se superposent. 
+
+
+Ensuite, à propos du cercle des corrélations, nous n'avons pas d'informations sur les flèches (quelle flèche correspond à quelle variable ?) et on observe aussi des chevauchements entre les variables, ce qui rend le graphique difficilement lisible.
+
+
+Nous allons choisir les dimensions et contrôler la pertinence de l'ACP avec le tableau des variances expliquées et un diagramme de Pareto.
+
+\newpage
+
+
+**Analyse du tableau des variances expliquées et affichage du diagramme de Pareto :**
+```{r}
+pareto.chart(res_pca$eig[,2], cumperc = seq(0, 100, by = 5), ylab = "Fréquence", ylab2 = "Cumul")
+```
+On observe que les 2 premières composantes couvrent plus de 98% (dont RW avec 95% de variance expliquée) de la variabilité, on peut donc réduire le nombre de dimensions des données à seulement 2 au lieu de 5
+
+
+\newpage
+
+
+### c) Nouvelle ACP avec les modifications : 
+
+
+Pour différencier les individus en fonction de leur espece et leur sexe, nous allons réintegrer les variables "sex" et "sp" en tant que variables supplémentaires (à l'aide de la fonction "cbind()"), ainsi nous aurons 4 couleurs et symboles pour différencier les types de crabes que nous détaillerons plus tard.
+
+
+**Normalisation des variables quantitatives sur le jeu de données en fonction de la variable CL :**
+```{r}
+crabsquant2 <- crabsquant[,c(1,2,4,5)]/crabsquant$CL
+```
+
+
+**Réintégration des variables qualitatives : **
+```{r}
+crabs2 <- cbind(crabs[1:2],crabsquant2)
+```
+
+
+```{r, fig.width = 3, fig.height = 3}
+res.pca2 <- PCA(crabs2,quali.sup = 1:2)
+```
+
+
+\newpage
+**Affichage du cercle de corrélation sur le graphique des individus : **
+```{r}
+fviz_pca_biplot(res.pca2, habillage = 1:2, label = "var", addEllipses=TRUE, ellipse.level=0.95)
+```
+Ainsi avec les modifications réalisées, nous avons le nouvel ACP en fonction des variables quantitatives normalisées ci-dessus avec le code couleur suivant :
+
+* Vert triangle : crabe femelle
+* Vert carré : crabe male
+* Bleu plus : crabe orange 
+* Rouge cercle : crabe bleu 
+
+Nous remarquons que cette nouvelle ACP est bien meilleure que la première, nous avons une meilleure précision et clarté concernant la représentation des graphiques.
+Nous avons réussis a séparer les différents types de crabes comme le montre le biplot.
+
+
+**Concernant le cercle de corrélations : **
+
+
+L'axe des abscisses représente la dimension 1, et différencie les crabes selon la variable sp.
+En effet, les crabes oranges sont ceux qui ont une valeur élevée en dimension 1 (à droite de la droite verticale), contrairement aux crabes bleus qui une faible valeur dans cette dimension (à gauche de la droite verticale).
+Ainsi, les crabes oranges ont un rapport entre les variables BD et CL élevé, et un  rapport CW/CL faible.
+
+
+L'axe des ordonnées représente la dimension 2, et différencie les crabes selon leur sexe.
+En effet, les crabes femelle sont celles qui ont une valeur élevée en dimension 2 (en haut de la droite horizontale), contrairement aux crabes males (meme si c'est moins flagrant). Plus le rapport RW/CL est élevé, plus le crabe sera susceptible d'être une femelle.
+
+
+**Nous avons donc réalisé une ACP permettant de prédire le type d'un crabe en fonction de certaines de ces mesures morphologiques. **
+
+
+\newpage
+# 3. Prédition avec CART (Arbre de décision)
+
+Ici, nous devons prédire la variable sp qui est une variable qualitative. Nous allons donc procéder à une analyse discriminante à l'aide d'un arbre de classification.
+
+## A. Arbre de classification : 
+
+
+**Transformation de la variable sp :**
+```{r}
+crabs$sp <- as.factor(crabs$sp)
+```
+
+
+Nous allons exclure la variable index car c'est la variable identifiante, elle ne nous apporte aucune information pertinente, nous allons donc construire un jeu de données sans index :
+```{r}
+crabs3 <- crabs[,-3]
+```
+
+
+Dans cette partie, nous allons subdiviser le jeu de données en deux echantillons : un d'apprentissage (70% du jeu de base) que l'on va utiliser pour construire l'arbre de décision, et un de test (30%) pour réaliser des prédictions et évaluer les performances du modèle.
+
+**Création des echantillons :**
+```{r}
+set.seed(100)
+trainIndex <- createDataPartition(crabs3$sp, p=0.7, list=FALSE, times = 1)
+print(length(trainIndex)) # taille de l'échantillon d'apprentissage
+print(head(trainIndex,10)) # 10 premiers individus de l'apprentissage
+
+crabsTrain <- crabs3[trainIndex,] 
+crabsTest <- crabs3[-trainIndex,] 
+
+```
+
+
+**Distribution des espèces dans les echantillons :**
+```{r}
+print(table(crabsTrain$sp))
+print(table(crabsTest$sp))
+```
+
+
+
+**Construction de l'arbre de décision complet**
+```{r}
+modtree <- rpart(sp~., data = crabsTrain, minsplit=2, cp=0) # feuilles contenants au moins 2 observations et sans contraites sur la qualité du découpage
+```
+
+
+Cet arbre complet à été construit de sorte a ce qu'il y ait au moins 2 observations dans chaque feuille, et sans contrainte sur la qualité du découpage.
+
+
+**Affichage de l'arbre complet :**
+```{r}
+prp(modtree, extra = 1, cex = 0.7)
+```
+
+
+Chaque nœud représente une question, la réponse non étant toujours dans la branche droite de l'arbre. Ce dernier comporte 16 feuilles et est assez volumineux. 
+
+
+Chaque feuille est étiquetée par la décision associée (ici B ou O) et par l'effectif classe par espèce des crabes affectés à la feuille. 
+Par exemple, la feuille la plus à gauche classe les crabes en B, avec 26 crabes de cette espèce et aucun de l'espèce O.
+
+
+Nous allons determiner la compléxité qui minimise l'erreur estimée.
+
+
+\newpage 
+
+
+**Calcul de la compléxité optimale :**
+
+Pour choisir le bon niveau de simplification (ou encore le bon nombre de feuilles), nous allons procèder par validation croisée.
+
+
+**Affichage du tableau de CP :** 
+```{r}
+printcp(modtree)
+plotcp(modtree) 
+```
+
+
+Comme prévu, les performances vont d'abord s'améliorer quand on va augmenter le nombre de feuilles puis vont se dégrader à cause du sur-apprentissage. 
+
+
+La valeur optimale de cp (la complexité qui minimise l'erreur estimée) pour l'élagage est généralement la valeur la plus à gauche en dessous de la droite horizontale (ici, ça semble être 0.076).
+
+
+\newpage
+
+
+## B. Arbre simplifié :
+
+
+**Afin de determiner la compléxité optimale, nous aurions pu nous contenter de determiner graphiquement à l'aide du graphique précédent, et de mettre directement la valeur trouvée sur cp (ie : mettre cp = 0.076). Nous allons privilégier une automatisation du processus de la manière suivante :**
+```{r}
+cp <- modtree$cptable[,1] 
+xerror <- modtree$cptable[,4]
+xstd <- modtree$cptable[,5] 
+line <- min(xerror)+xstd[which.min(xerror)] 
+```
+
+
+**Création de l'arbre simplifié :**
+```{r}
+indexTree <- which(modtree$cptable[,4] < line)[1]
+modtree2 <-prune(modtree, cp = sqrt(cp[indexTree]*cp[indexTree+1])) 
+```
+
+**Affichage du nouvel arbre : **
+```{r}
+prp(modtree2, extra = 1)
+```
+
+Nous avons donc l'arbre simplifié, il comporte 6 feuilles et est beaucoup plus facile a lire que l'arbre complet.
+
+\newpage
+
+## C. Performances de l'arbre :
+
+
+Afin d'évaluer les performances de l'arbre, nous allons tester l'arbre sur le jeu de données de test et voir à quel point le modèle est performant.
+
+
+**Prédiction et distribution des espèces prédites sur l'échantillon test :**
+```{r}
+pred <- predict(modtree2, newdata = crabsTest, type = "class")
+print(table(pred))
+```
+
+
+Le modèle à prédit 34 crabes d'espèce Bleu et 26 Oranges, regardons si la prédiction est bonne ou non.
+
+\newpage
+**Affichage de la matrice de confusion et différents indicateurs d'évaluation :**
+```{r}
+mat <- confusionMatrix(data = pred, reference = crabsTest$sp, positive = "O") 
+print(mat)
+```
+
+
+On constate que la qualité de prédiction dépend de l'espèce du crabe.
+
+
+Le taux de prédiction correctes total est est d'environ 87 %.
+
+
+En effet, sur les 34 crabes Oranges , le taux de prévisions correctes est d'environ 82 %, et sur les 26 crabes Bleus, le taux de prévisions correctes est d'environ 92 %.
+
+
+Le modèle est tres efficace pour prédire les crabes Bleus, et est assez bon pour prédire les crabes Oranges.
+
+
+On conclut que le modèle est efficace et réalise de bonnes prédictions sur le jeu d'apprentissage. Pour avoir de meilleurs résultats, on pourrait entrainer le modèle et  le tester sur de plus gros jeux de données.

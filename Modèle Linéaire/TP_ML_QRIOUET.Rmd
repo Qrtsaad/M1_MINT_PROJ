@@ -1,0 +1,144 @@
+---
+title: "TP noté Modèle Linéaire"
+author: "Saâd Qriouet 20171683"
+date: "11/9/2020"
+output: html_document
+---
+
+
+# 1. Chargement des données et des différentes librairies
+```{r}
+library(MASS)
+library(lasso2)
+data <- data(Prostate)
+names(Prostate)
+dim(Prostate)
+names(Prostate)
+```
+
+# 2. Transformation des variables
+
+Nous allons utiliser la fonction as.factor() sur les variables qualitatives svi et gleason afin de les transformer en varibales quantitatives :
+```{r}
+Prostate$svi <- as.factor(Prostate$svi)
+Prostate$gleason <- as.factor(Prostate$gleason)
+summary(Prostate)
+```
+
+# Nous allons réaliser un scatterplot des variables :
+
+```{r}
+pairs(Prostate)
+```
+
+# 3. Modèle de régression linéaire simple expliquant lpsa en fonction de lcavol
+On utilise la fonction lm() afin de mettre en oeuvre un modèle linéaire :
+```{r}
+mod1 = lm(lpsa~lcavol, data = Prostate)
+summary(mod1)
+```
+
+# 3.(f)
+Une estimation de l'équation de la droite des moindres carrées associée au problème est donc : y = 1.50730 + 0.71932*x, où x correspond à la valeur de lcavol et y une prévision de lpsa.
+Nous pouvons recuperer les coefficients à partir du summary(mod1) en les lisant dans le tableau, ou en les extrayant comme suit : 
+```{r}
+a = mod1$coefficients[1]
+b = mod1$coefficients[2]
+```
+
+
+# 3.(g)
+Pour réaliser la prédiction, on utilise la fonction predict() :
+```{r}
+print("La prédiction avec la predict() est égale à : ")
+newdata = data.frame(lcavol = 1.35)
+pred = predict(mod1, newdata)
+print(pred)
+```
+En remplacant "pred = predict(mod1, newdata)" par 
+"pred = predict(mod1, newdata, interval = "predict")", on obtient aussi l'intervalle de prédiction de la prédiction.
+
+
+# 3.(j)
+Nous allons comparer le modèle mod0 (contenant uniquement l'intercept) et le modèle m1 (contenant l'intercept et la variable lcavol) grâce a la fonction anova() :
+```{r}
+mod0 = lm(lpsa~1, data = Prostate)
+anova(mod0,mod1)
+```
+
+
+# 3.(k)
+Nous allons analyser le plot des residus en fonction des valeurs prédites, et le QQ-plot grâce à la fonction plot() appliquée à mod1 :
+```{r}
+plot(mod1,which=1:2)
+```
+
+
+# 4. Modèle complet
+```{r}
+mod2 = lm(lpsa~. , data = Prostate )
+summary(mod2)
+```
+
+# 5. Comparaison de modèles emboités
+```{r}
+mod0 = lm(lpsa~1 , data = Prostate )
+modA = lm(lpsa ~ lcavol+pgg45, data = Prostate)
+modB = lm(lpsa ~ lcavol+lweight, data = Prostate)
+modC = lm(lpsa ~ lcavol+lweight+age , data = Prostate)
+anova(modA,modB)
+```
+Le degré de liberté de ce test de comparaison est nul, nous ne pouvons donc pas calculer la p-value. Nous allons donc proceder d'une autre manière afin de comparer ces deux modèles (plus tard dans le TP)
+
+```{r}
+anova(modA,modC)
+```
+p-value < 0.01, donc on rejette le premier modèle par rapport au 3ème à 5% et 1%
+
+```{r}
+anova(modB,modC)
+```
+p-value ~= 0.39, donc on ne rejette pas le second modèle par rapport au 3ème
+
+Pour comparer les deux premiers modèles, nous allons d'abord calculer l'erreur de prédiction des deux modèles :
+```{r}
+res_modA = residuals(modA)
+mean(res_modA**2)
+
+res_modB = residuals(modB)
+mean(res_modB**2)
+
+```
+Le second modèle à l'erreur de prédiction la plus petite, donc à une meilleure estimation. Cependant la différence est trop faible pour pouvoir conclure dessus.
+
+
+Nous allons calculer les différents AIC des variables concernées grace aux algorithmes suivants :
+
+AIC "forward" :
+```{r}
+modselect_f = stepAIC(mod1, lpsa~lcavol+lweight+pgg45, trace=TRUE, direction=c("forward"))
+summary(modselect_f)
+```
+La variable lweight à été ajoutée au modèle avant pgg45, donc le second modèle est meillleur que le premier selon l'algo "forward".
+
+AIC "backward" :
+```{r}
+modselect_b = stepAIC(mod2, ~., trace=TRUE, direction=c("backward"))
+summary(modselect_b)
+```
+
+La variable pgg45 à été retirée contrairement a lweight, le second modèle  est donc meilleur que le premier modèle selon l'algo "backward".
+
+
+AIC "stepwise" :
+```{r}
+modselect_st = stepAIC(mod0, lpsa~lcavol+lweight+pgg45, trace=TRUE, direction=c("both"))
+summary(modselect_st)
+```
+On voit que le premier modèle apparait avant le second, il a donc une meilleure AIC, donc est meilleur selon l'algo "stepwise".
+
+
+CONCLUSION :
+Nous avons vu que le second modèle a une meilleure erreur de prediction, qu'il est meilleur que le premier selon les algo "forward" et "backward", cependant n'est pas meilleur que le premier modèle selon "stepwise".
+Nous allons quand même conclure que le second modèle est meilleur que le deuxième.
+On a donc le deuxième modèle meilleur que le troisième modèle, lui même meilleur que le premier modèle.
